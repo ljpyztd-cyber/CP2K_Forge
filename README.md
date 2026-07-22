@@ -2,6 +2,10 @@
 
 **作者 / Author:** Brant Li from City University of Hong Kong ([jiapeili-c@my.cityu.edu.hk](mailto:jiapeili-c@my.cityu.edu.hk))
 
+> **Slurm 平台说明：** 当前 Slurm 脚本生成功能暂时只适用于作者使用的超算平台；如需协助修改或适配其他平台，请通过上述邮箱联系作者。
+>
+> **Slurm platform notice:** The current Slurm script generator is temporarily specific to the HPC platform used by the author. For assistance modifying or adapting it to another platform, contact the author at the email address above.
+
 ## 重要：Multiwfn 致谢与引用要求 | Important: Multiwfn Acknowledgement and Citation Requirement
 
 > **中文：** CP2K_Forge 的 CP2K 输入文件生成流程调用了 Multiwfn。谨向北京科音卢天老师（Sobereva）致谢。凡使用 CP2K_Forge 生成的输入文件或计算工作流开展研究并发表论文，包括为他人进行的代算，必须在论文**正文**中至少引用下面两篇 Multiwfn 文献；仅在补充信息中引用不符合 Multiwfn 的引用要求。

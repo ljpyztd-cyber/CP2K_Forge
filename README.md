@@ -15,9 +15,53 @@
 1. Tian Lu and Feiwu Chen, "Multiwfn: A Multifunctional Wavefunction Analyzer," *Journal of Computational Chemistry* **33**, 580-592 (2012). [https://doi.org/10.1002/jcc.22885](https://doi.org/10.1002/jcc.22885)
 2. Tian Lu, "A comprehensive electron wavefunction analysis toolbox for chemists, Multiwfn," *Journal of Chemical Physics* **161**, 082503 (2024). [https://doi.org/10.1063/5.0216272](https://doi.org/10.1063/5.0216272)
 
+**Multiwfn 主页 / Homepage:** [http://sobereva.com/multiwfn](http://sobereva.com/multiwfn)
+
 Multiwfn 是独立的第三方软件，本仓库不包含 Multiwfn 本体。请同时遵守 Multiwfn 自身的许可证、使用条款和引用说明。
 
 Multiwfn is independent third-party software and is not distributed in this repository. Users must also comply with its license, terms of use, and citation instructions.
+
+## 安装方式 | Installation
+
+### 中文
+
+1. 安装 Windows 10/11、Python 3.10 或更高版本，并确认 `python` 和 `pip` 可在 PowerShell 中使用。
+2. 从 [Multiwfn 主页](http://sobereva.com/multiwfn) 下载并完整解压 Multiwfn。不要只复制 `Multiwfn.exe`，其配套文件需要保留在同一目录中。
+3. 克隆本仓库，或通过 GitHub 的 **Code > Download ZIP** 下载并解压源码：
+
+```powershell
+git clone https://github.com/ljpyztd-cyber/CP2K_Forge.git
+cd CP2K_Forge
+python -m pip install -r CP2K_FORGE_EXE\requirements.txt
+```
+
+4. 启动桌面程序：
+
+```powershell
+python CP2K_FORGE_EXE\run.py
+```
+
+5. 首次启动后，在“设置”中选择完整的 Multiwfn 安装目录或 `Multiwfn.exe`。
+
+### English
+
+1. Install Windows 10/11 and Python 3.10 or newer. Confirm that `python` and `pip` are available in PowerShell.
+2. Download and fully extract Multiwfn from the [Multiwfn homepage](http://sobereva.com/multiwfn). Keep all supporting files with `Multiwfn.exe`; do not copy the executable alone.
+3. Clone this repository, or use **Code > Download ZIP** on GitHub and extract the source:
+
+```powershell
+git clone https://github.com/ljpyztd-cyber/CP2K_Forge.git
+cd CP2K_Forge
+python -m pip install -r CP2K_FORGE_EXE\requirements.txt
+```
+
+4. Start the desktop application:
+
+```powershell
+python CP2K_FORGE_EXE\run.py
+```
+
+5. After the first launch, select the complete Multiwfn installation directory or `Multiwfn.exe` in Settings.
 
 ## 中文说明
 
@@ -33,7 +77,6 @@ CP2K_Forge 是一个 Windows 桌面工具，用于通过经过验证的 Multiwfn
 ### 主要功能
 
 - 生成 `ENERGY`、`GEO_OPT` 和 `CELL_OPT` 输入文件。
-- 保留 Multiwfn option 9 固定原子流程。
 - 支持 OT/对角化、磁性、DFT+U、Molden、电荷分析和 cube 输出等设置。
 - 支持单文件和批量 INP 生成，并可同时创建本地 Slurm 脚本。
 - 载入并显示 CIF/MCIF、XYZ、PDB/ENT、GRO、GJF/COM、POSCAR/VASP 和 CP2K INP/RESTART。
@@ -58,15 +101,6 @@ GitHub 仓库仅保留桌面程序运行和构建所需源码及必要元数据�
 - Python 3.10 或更高版本
 - PyQt5 5.15 或更高版本
 - 完整的 Multiwfn 安装目录
-
-### 运行源码
-
-```powershell
-python -m pip install -r CP2K_FORGE_EXE\requirements.txt
-python CP2K_FORGE_EXE\run.py
-```
-
-首次运行后，可在“设置”中选择 Multiwfn 安装目录或 `Multiwfn.exe`。
 
 ### 构建桌面程序
 
@@ -96,7 +130,6 @@ Current versions:
 ### Features
 
 - Generate `ENERGY`, `GEO_OPT`, and `CELL_OPT` input files.
-- Preserve the Multiwfn option 9 workflow for fixed atoms.
 - Configure OT/diagonalization, magnetism, DFT+U, Molden, charge analysis, cube output, and related settings.
 - Generate single or batch inputs with optional local Slurm scripts.
 - Load and visualize CIF/MCIF, XYZ, PDB/ENT, GRO, GJF/COM, POSCAR/VASP, and CP2K INP/RESTART structures.
@@ -121,15 +154,6 @@ The GitHub repository contains only the source and metadata required to run and 
 - Python 3.10 or newer
 - PyQt5 5.15 or newer
 - A complete Multiwfn installation
-
-### Run from Source
-
-```powershell
-python -m pip install -r CP2K_FORGE_EXE\requirements.txt
-python CP2K_FORGE_EXE\run.py
-```
-
-On first launch, select the Multiwfn installation folder or `Multiwfn.exe` in Settings.
 
 ### Build the Desktop Application
 

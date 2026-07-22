@@ -6,6 +6,8 @@
 >
 > **Slurm platform notice:** The current Slurm script generator is temporarily specific to the HPC platform used by the author. For assistance modifying or adapting it to another platform, contact the author at the email address above.
 
+**Multiwfn 主页 / Homepage:** [http://sobereva.com/multiwfn](http://sobereva.com/multiwfn)
+
 ## 中文
 
 本目录包含 CP2K_Forge `v0.4.9` 桌面程序源码：PyQt 主界面、结构可视化、设置持久化、桌面专用 INP 生成后端和 PyInstaller 构建配置。

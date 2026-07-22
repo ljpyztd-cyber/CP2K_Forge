@@ -21,6 +21,26 @@ Multiwfn 是独立的第三方软件，本仓库不包含 Multiwfn 本体。请�
 
 Multiwfn is independent third-party software and is not distributed in this repository. Users must also comply with its license, terms of use, and citation instructions.
 
+## 项目简介 | Overview
+
+### 中文
+
+CP2K_Forge 是一个 Windows 桌面工具，用于通过经过验证的 Multiwfn 生成链路创建 CP2K `.inp` 文件，并提供 PyQt 分子/晶体结构可视化、固定原子选择、批量生成和本地 Slurm 脚本生成功能。
+
+当前版本：
+
+- 桌面程序：`v0.4.9`
+- 稳定 INP 生成后端：`v0.2.18`
+
+### English
+
+CP2K_Forge is a Windows desktop application that creates CP2K `.inp` files through a validated Multiwfn-based generation path. It also provides PyQt molecular/crystal visualization, fixed-atom selection, batch generation, and local Slurm script generation.
+
+Current versions:
+
+- Desktop application: `v0.4.9`
+- Stable INP generation backend: `v0.2.18`
+
 ## 安装方式 | Installation
 
 ### 中文
@@ -65,15 +85,6 @@ python CP2K_FORGE_EXE\run.py
 
 ## 中文说明
 
-### 项目简介
-
-CP2K_Forge 是一个 Windows 桌面工具，用于通过经过验证的 Multiwfn 生成链路创建 CP2K `.inp` 文件，并提供 PyQt 分子/晶体结构可视化、固定原子选择、批量生成和本地 Slurm 脚本生成功能。
-
-当前版本：
-
-- 桌面程序：`v0.4.9`
-- 稳定 INP 生成后端：`v0.2.18`
-
 ### 主要功能
 
 - 生成 `ENERGY`、`GEO_OPT` 和 `CELL_OPT` 输入文件。
@@ -117,15 +128,6 @@ python -m PyInstaller CP2K_FORGE_EXE\CP2K_FORGE_EXE.spec `
 当前 GitHub 源码范围只包含本地 INP 生成和桌面可视化。SSH、远程提交、远程监控和下载功能不属于当前桌面项目。
 
 ## English
-
-### Overview
-
-CP2K_Forge is a Windows desktop application that creates CP2K `.inp` files through a validated Multiwfn-based generation path. It also provides PyQt molecular/crystal visualization, fixed-atom selection, batch generation, and local Slurm script generation.
-
-Current versions:
-
-- Desktop application: `v0.4.9`
-- Stable INP generation backend: `v0.2.18`
 
 ### Features
 

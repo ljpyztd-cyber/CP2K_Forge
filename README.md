@@ -2,10 +2,6 @@
 
 **作者 / Author:** Brant Li from City University of Hong Kong ([jiapeili-c@my.cityu.edu.hk](mailto:jiapeili-c@my.cityu.edu.hk))
 
-> **Slurm 平台说明：** 当前 Slurm 脚本生成功能暂时只适用于作者使用的超算平台；如需协助修改或适配其他平台，请通过上述邮箱联系作者。
->
-> **Slurm platform notice:** The current Slurm script generator is temporarily specific to the HPC platform used by the author. For assistance modifying or adapting it to another platform, contact the author at the email address above.
-
 ## 重要：Multiwfn 致谢与引用要求 | Important: Multiwfn Acknowledgement and Citation Requirement
 
 > **中文：** CP2K_Forge 的 CP2K 输入文件生成流程调用了 Multiwfn。谨向北京科音卢天老师（Sobereva）致谢。凡使用 CP2K_Forge 生成的输入文件或计算工作流开展研究并发表论文，包括为他人进行的代算，必须在论文**正文**中至少引用下面两篇 Multiwfn 文献；仅在补充信息中引用不符合 Multiwfn 的引用要求。
@@ -89,7 +85,7 @@ python CP2K_FORGE_EXE\run.py
 
 - 生成 `ENERGY`、`GEO_OPT` 和 `CELL_OPT` 输入文件。
 - 支持 OT/对角化、磁性、DFT+U、Molden、电荷分析和 cube 输出等设置。
-- 支持单文件和批量 INP 生成，并可同时创建本地 Slurm 脚本。
+- 支持单文件和批量 INP 生成，并可同时创建本地 Slurm 脚本（暂仅适用于作者使用的超算平台；其他平台适配请联系作者）。
 - 载入并显示 CIF/MCIF、XYZ、PDB/ENT、GRO、GJF/COM、POSCAR/VASP 和 CP2K INP/RESTART。
 - 支持晶胞、周期映射、边界双显、扩胞、原子选择、显示键编辑、视角书签、撤销/重做和高清图片导出。
 
@@ -133,7 +129,7 @@ python -m PyInstaller CP2K_FORGE_EXE\CP2K_FORGE_EXE.spec `
 
 - Generate `ENERGY`, `GEO_OPT`, and `CELL_OPT` input files.
 - Configure OT/diagonalization, magnetism, DFT+U, Molden, charge analysis, cube output, and related settings.
-- Generate single or batch inputs with optional local Slurm scripts.
+- Generate single or batch inputs with optional local Slurm scripts (currently specific to the author's HPC platform; contact the author for adaptation).
 - Load and visualize CIF/MCIF, XYZ, PDB/ENT, GRO, GJF/COM, POSCAR/VASP, and CP2K INP/RESTART structures.
 - Display cells, wrap periodic atoms, duplicate boundary atoms, build supercells, select atoms, edit displayed bonds, save views, undo/redo visual operations, and export high-resolution images.
 

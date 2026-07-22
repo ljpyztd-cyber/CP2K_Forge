@@ -2,10 +2,6 @@
 
 **作者 / Author:** Brant Li from City University of Hong Kong ([jiapeili-c@my.cityu.edu.hk](mailto:jiapeili-c@my.cityu.edu.hk))
 
-> **Slurm 平台说明：** 当前 Slurm 脚本生成功能暂时只适用于作者使用的超算平台；如需协助修改或适配其他平台，请通过上述邮箱联系作者。
->
-> **Slurm platform notice:** The current Slurm script generator is temporarily specific to the HPC platform used by the author. For assistance modifying or adapting it to another platform, contact the author at the email address above.
-
 **Multiwfn 主页 / Homepage:** [http://sobereva.com/multiwfn](http://sobereva.com/multiwfn)
 
 ## 中文

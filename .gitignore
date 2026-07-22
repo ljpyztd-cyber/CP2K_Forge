@@ -1,0 +1,62 @@
+# Python and test caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments and editor state
+.venv/
+venv/
+.idea/
+.vscode/
+*.swp
+
+# Build and packaged binaries
+build/
+dist/
+CP2K_FORGE_EXE/build/
+CP2K_FORGE_EXE/dist/
+*.exe
+*.dll
+*.pyd
+
+# Generated CP2K_Forge state and source-only rollback archives
+CP2K_Forge/backups/
+CP2K_Forge/workspace/
+CP2K_Forge/Test_cif/
+CP2K_Forge/Test_Monitor/
+CP2K_FORGE_EXE/Test/
+CP2K_FORGE_EXE/Ball&Bond_style/
+CP2K_FORGE_EXE/workspace/
+*.zip
+
+# Local project/session context
+AGENTS.md
+PROJECT_CONTEXT.md
+VISUALIZATION_INTEGRATION_PLAN.md
+
+# External tools and unrelated local projects
+Multiwfn_3.8_dev_bin_Win64/
+VESTA-win64/
+MolCanvas/
+CP2K_GUI/
+CP2K_Craft_TestVersion/
+
+# Site-specific HPC environment helper
+CP2K_Forge/scripts/env_hpccube.sh
+
+# Desktop-source-only GitHub publishing scope
+.github/
+tests/
+pytest.ini
+requirements-dev.txt
+Open_CP2K_Forge.bat
+CP2K_Forge.url
+CP2K_Forge/README.md
+CP2K_Forge/start_cp2k_forge.bat
+CP2K_Forge/cp2k_forge/
+CP2K_Forge/docs/
+CP2K_Forge/scripts/
+CP2K_FORGE_EXE/docs/

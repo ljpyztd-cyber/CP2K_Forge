@@ -6,7 +6,7 @@
 
 > **中文：** CP2K_Forge 的 CP2K 输入文件生成流程调用了 Multiwfn。谨向北京科音卢天老师（Sobereva）致谢。凡使用 CP2K_Forge 生成的输入文件或计算工作流开展研究并发表论文，包括为他人进行的代算，必须在论文**正文**中至少引用下面两篇 Multiwfn 文献；仅在补充信息中引用不符合 Multiwfn 的引用要求。
 >
-> **English:** CP2K_Forge uses Multiwfn in its CP2K input-generation workflow. We gratefully acknowledge Prof. Tian Lu (Sobereva) of Beijing Kein Research Center for Natural Sciences. Any publication based on CP2K_Forge-generated inputs or workflows, including calculations performed for third parties, must cite **both** Multiwfn papers below in the **main text**. Citing them only in the Supporting Information does not satisfy the Multiwfn citation requirement.
+> **English:** CP2K_Forge uses Multiwfn in its CP2K input-generation workflow. We gratefully acknowledge Dr. Tian Lu (Sobereva) of Beijing Kein Research Center for Natural Sciences. Any publication based on CP2K_Forge-generated inputs or workflows, including calculations performed for third parties, must cite **both** Multiwfn papers below in the **main text**. Citing them only in the Supporting Information does not satisfy the Multiwfn citation requirement.
 
 1. Tian Lu and Feiwu Chen, "Multiwfn: A Multifunctional Wavefunction Analyzer," *Journal of Computational Chemistry* **33**, 580-592 (2012). [https://doi.org/10.1002/jcc.22885](https://doi.org/10.1002/jcc.22885)
 2. Tian Lu, "A comprehensive electron wavefunction analysis toolbox for chemists, Multiwfn," *Journal of Chemical Physics* **161**, 082503 (2024). [https://doi.org/10.1063/5.0216272](https://doi.org/10.1063/5.0216272)

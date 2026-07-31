@@ -1616,9 +1616,9 @@ class MoleculeCanvas(CanvasBase):
         return 0.94 if self.atom_representation(atom) == "vdw" else 0.68
 
     def _regular_bond_visible(self, atom1: Atom, atom2: Atom) -> bool:
-        return not (
-            self.atom_representation(atom1) == "vdw"
-            and self.atom_representation(atom2) == "vdw"
+        return (
+            self.atom_representation(atom1) == "ball_stick"
+            and self.atom_representation(atom2) == "ball_stick"
         )
 
     def _bond_sort_depth(self, p1, p2, atom1: Atom, atom2: Atom) -> float:

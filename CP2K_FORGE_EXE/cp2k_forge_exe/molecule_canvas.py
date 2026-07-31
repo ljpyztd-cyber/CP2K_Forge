@@ -120,6 +120,8 @@ class MoleculeCanvas(CanvasBase):
         self.atom_shadow_color = QColor("#B8B8B8")
         self.atom_size_scale = 1.0
         self.atom_radius_mode = "default"
+        self.atom_representation_mode = "ball_stick"
+        self.atom_index_representations: dict[int, str] = {}
         self.atom_element_colors: dict[str, QColor] = {}
         self.atom_index_colors: dict[int, QColor] = {}
         self.atom_element_sizes: dict[str, float] = {}
@@ -236,6 +238,11 @@ class MoleculeCanvas(CanvasBase):
                 "shadow_color": QColor(self.atom_shadow_color).name(),
                 "size_scale": self.atom_size_scale,
                 "radius_mode": self.atom_radius_mode,
+                "representation_mode": self.atom_representation_mode,
+                "index_representations": {
+                    str(key): value
+                    for key, value in sorted(self.atom_index_representations.items())
+                },
                 "element_colors": self._color_map_snapshot(self.atom_element_colors),
                 "index_colors": self._color_map_snapshot(self.atom_index_colors),
                 "element_sizes": self._float_map_snapshot(self.atom_element_sizes),
@@ -307,6 +314,13 @@ class MoleculeCanvas(CanvasBase):
             self.atom_shadow_color = QColor(str(atom.get("shadow_color", QColor(self.atom_shadow_color).name())))
             self.atom_size_scale = max(0.2, min(3.0, float(atom.get("size_scale", self.atom_size_scale))))
             self.atom_radius_mode = str(atom.get("radius_mode", self.atom_radius_mode))
+            self.atom_representation_mode = self._normalize_atom_representation(
+                atom.get("representation_mode", self.atom_representation_mode)
+            )
+            self.atom_index_representations = {
+                int(key): self._normalize_atom_representation(value)
+                for key, value in dict(atom.get("index_representations", {})).items()
+            }
             self.atom_element_colors = {str(key): QColor(str(value)) for key, value in dict(atom.get("element_colors", {})).items()}
             self.atom_index_colors = {int(key): QColor(str(value)) for key, value in dict(atom.get("index_colors", {})).items()}
             self.atom_element_sizes = {str(key): float(value) for key, value in dict(atom.get("element_sizes", {})).items()}
@@ -403,6 +417,7 @@ class MoleculeCanvas(CanvasBase):
         self._atoms_by_index = {atom.index: atom for atom in self.atoms}
         self.bonds = sorted({self._bond_key(a1, a2) for a1, a2 in bonds if a1 != a2})
         self.cell_vectors = cell_vectors
+        self.atom_index_representations.clear()
         self.selected_atoms.clear()
         self.clicked_label_atoms.clear()
         self.frozen_atoms.clear()
@@ -493,14 +508,46 @@ class MoleculeCanvas(CanvasBase):
         self._center = (cx, cy, cz)
         max_extent = 0.0
         for atom in display_atoms:
-            max_extent = max(max_extent, abs(atom.x - cx), abs(atom.y - cy), abs(atom.z - cz))
+            radius = self._atom_radius_units(atom)
+            max_extent = max(
+                max_extent,
+                abs(atom.x - cx) + radius,
+                abs(atom.y - cy) + radius,
+                abs(atom.z - cz) + radius,
+            )
         for x, y, z in self._cell_points():
             max_extent = max(max_extent, abs(x - cx), abs(y - cy), abs(z - cz))
         self._scene_extent = max(max_extent, 1.0)
         self.rot_x, self.rot_y, self.rot_z = DEFAULT_ROT_X, DEFAULT_ROT_Y, DEFAULT_ROT_Z
         self.zoom = 1.0
         self.pan_x, self.pan_y = 0.0, max(self.height(), 1) * 0.14
-        self.scale = min(max(self.width(), 1), max(self.height(), 1)) / (max_extent * 2.20 + 1)
+        fit_factor = 2.90 if any(self.atom_representation(atom) == "vdw" for atom in display_atoms) else 2.20
+        self.scale = min(max(self.width(), 1), max(self.height(), 1)) / (max_extent * fit_factor + 1)
+        self.update()
+
+    def refit_scene_scale(self) -> None:
+        if not self.atoms:
+            self.update()
+            return
+        display_atoms = [atom for atom, _offset in self._display_atom_entries()] or list(self.atoms)
+        cx = sum(atom.x for atom in display_atoms) / len(display_atoms)
+        cy = sum(atom.y for atom in display_atoms) / len(display_atoms)
+        cz = sum(atom.z for atom in display_atoms) / len(display_atoms)
+        self._center = (cx, cy, cz)
+        max_extent = 0.0
+        for atom in display_atoms:
+            radius = self._atom_radius_units(atom)
+            max_extent = max(
+                max_extent,
+                abs(atom.x - cx) + radius,
+                abs(atom.y - cy) + radius,
+                abs(atom.z - cz) + radius,
+            )
+        for x, y, z in self._cell_points():
+            max_extent = max(max_extent, abs(x - cx), abs(y - cy), abs(z - cz))
+        self._scene_extent = max(max_extent, 1.0)
+        fit_factor = 2.90 if any(self.atom_representation(atom) == "vdw" for atom in display_atoms) else 2.20
+        self.scale = min(max(self.width(), 1), max(self.height(), 1)) / (max_extent * fit_factor + 1)
         self.update()
 
     def set_perspective_enabled(self, enabled: bool) -> None:
@@ -634,6 +681,49 @@ class MoleculeCanvas(CanvasBase):
         self._record_history()
         self.atom_radius_mode = normalized
         self.update()
+
+    @staticmethod
+    def _normalize_atom_representation(mode: object) -> str:
+        return "vdw" if str(mode or "").strip().lower() == "vdw" else "ball_stick"
+
+    def atom_representation(self, atom_or_index: Atom | int) -> str:
+        index = atom_or_index.index if isinstance(atom_or_index, Atom) else int(atom_or_index)
+        return self.atom_index_representations.get(index, self.atom_representation_mode)
+
+    def set_atom_representation_mode(self, mode: str) -> None:
+        normalized = self._normalize_atom_representation(mode)
+        if self.atom_representation_mode == normalized and not self.atom_index_representations:
+            return
+        self._record_history()
+        self.atom_representation_mode = normalized
+        self.atom_index_representations.clear()
+        self.refit_scene_scale()
+
+    def set_atom_index_representation(self, indices: set[int] | list[int], mode: str) -> int:
+        values = {
+            int(index)
+            for index in indices
+            if int(index) > 0 and (not self._atoms_by_index or int(index) in self._atoms_by_index)
+        }
+        if not values:
+            return 0
+        normalized = self._normalize_atom_representation(mode)
+        old_state = self._snapshot_state()
+        for index in values:
+            if normalized == self.atom_representation_mode:
+                self.atom_index_representations.pop(index, None)
+            else:
+                self.atom_index_representations[index] = normalized
+        if old_state == self._snapshot_state():
+            return 0
+        if not self._history_restoring and self._history_suspended <= 0:
+            self._undo_stack.append(old_state)
+            if len(self._undo_stack) > self._history_limit:
+                self._undo_stack = self._undo_stack[-self._history_limit:]
+            self._redo_stack.clear()
+            self.history_changed.emit()
+        self.refit_scene_scale()
+        return len(values)
 
     def set_atom_outline_enabled(self, enabled: bool) -> None:
         value = bool(enabled)
@@ -1262,6 +1352,8 @@ class MoleculeCanvas(CanvasBase):
 
     def _atom_radius_units(self, atom: Atom) -> float:
         size_scale = self._atom_size_scale(atom)
+        if self.atom_representation(atom) == "vdw":
+            return VDW_RADII.get(atom.symbol, max(1.2, ATOM_RADII.get(atom.symbol, 0.8) * 1.7)) * size_scale
         if self.atom_radius_mode == "equal":
             return 0.36 * size_scale
         if self.atom_radius_mode == "real":
@@ -1520,26 +1612,35 @@ class MoleculeCanvas(CanvasBase):
                 pairs.append((projected1, projected2, atom1, atom2))
         return pairs
 
-    def _bond_sort_depth(self, p1, p2) -> float:
+    def _bond_cut_factor(self, atom: Atom) -> float:
+        return 0.94 if self.atom_representation(atom) == "vdw" else 0.68
+
+    def _regular_bond_visible(self, atom1: Atom, atom2: Atom) -> bool:
+        return not (
+            self.atom_representation(atom1) == "vdw"
+            and self.atom_representation(atom2) == "vdw"
+        )
+
+    def _bond_sort_depth(self, p1, p2, atom1: Atom, atom2: Atom) -> float:
         _a1, sx1, sy1, sz1, r1 = p1
         _a2, sx2, sy2, sz2, r2 = p2
         length = math.hypot(sx2 - sx1, sy2 - sy1)
         if length < 1:
             return (sz1 + sz2) / 2.0
-        t_start = min(0.49, max(0.0, (r1 * 0.68) / length))
-        t_end = max(0.51, min(1.0, 1.0 - (r2 * 0.68) / length))
+        t_start = min(0.49, max(0.0, (r1 * self._bond_cut_factor(atom1)) / length))
+        t_end = max(0.51, min(1.0, 1.0 - (r2 * self._bond_cut_factor(atom2)) / length))
         z_start = sz1 + (sz2 - sz1) * t_start
         z_end = sz1 + (sz2 - sz1) * t_end
         return (z_start + z_end) / 2.0
 
     def _make_bond_items(self, p1, p2, atom1: Atom, atom2: Atom) -> list[tuple[str, float, tuple, tuple, Atom, Atom, float]]:
-        if self.bond_width <= 0:
+        if self.bond_width <= 0 or not self._regular_bond_visible(atom1, atom2):
             return []
-        sort_depth = self._bond_sort_depth(p1, p2)
+        sort_depth = self._bond_sort_depth(p1, p2, atom1, atom2)
         return [("bond", sort_depth, p1, p2, atom1, atom2, self._depth_factor(sort_depth))]
 
     def _draw_bond(self, painter: QPainter, p1, p2, atom1: Atom, atom2: Atom, depth: float) -> None:
-        if self.bond_width <= 0:
+        if self.bond_width <= 0 or not self._regular_bond_visible(atom1, atom2):
             return
         _a1, sx1, sy1, _sz1, r1 = p1
         _a2, sx2, sy2, _sz2, r2 = p2
@@ -1547,7 +1648,10 @@ class MoleculeCanvas(CanvasBase):
         length = math.hypot(dx, dy)
         if length < 1:
             return
-        cut1, cut2 = r1 * 0.68, r2 * 0.68
+        cut1 = r1 * self._bond_cut_factor(atom1)
+        cut2 = r2 * self._bond_cut_factor(atom2)
+        if cut1 + cut2 >= length - 0.5:
+            return
         x1, y1 = sx1 + dx * cut1 / length, sy1 + dy * cut1 / length
         x2, y2 = sx2 - dx * cut2 / length, sy2 - dy * cut2 / length
         width = max(0.0, self.bond_width * self.zoom * depth)
@@ -1793,7 +1897,7 @@ class MoleculeCanvas(CanvasBase):
                 visible_bonds.append(((p1[3] + p2[3]) / 2.0, p1, p2, atom1, atom2))
             gl.glLineWidth(ctypes.c_float(max(0.5, min(16.0, self.bond_width * self.zoom))))
             for _depth, p1, p2, atom1, atom2 in sorted(visible_bonds, key=lambda item: item[0]):
-                if not atom1 or not atom2:
+                if not atom1 or not atom2 or not self._regular_bond_visible(atom1, atom2):
                     continue
                 _a1, sx1, sy1, _sz1, r1 = p1
                 _a2, sx2, sy2, _sz2, r2 = p2
@@ -1801,7 +1905,10 @@ class MoleculeCanvas(CanvasBase):
                 length = math.hypot(dx, dy)
                 if length < 1:
                     continue
-                cut1, cut2 = r1 * 0.66, r2 * 0.66
+                cut1 = r1 * self._bond_cut_factor(atom1)
+                cut2 = r2 * self._bond_cut_factor(atom2)
+                if cut1 + cut2 >= length - 0.5:
+                    continue
                 x1, y1 = sx1 + dx * cut1 / length, sy1 + dy * cut1 / length
                 x2, y2 = sx2 - dx * cut2 / length, sy2 - dy * cut2 / length
                 if self.bond_color_mode == "single":

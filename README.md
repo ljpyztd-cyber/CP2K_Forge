@@ -25,7 +25,7 @@ CP2K_Forge 是一个 Windows 桌面工具，用于通过经过验证的 Multiwfn
 
 当前版本：
 
-- 桌面程序：`v0.4.9`
+- 桌面程序：`v0.4.10`
 - 稳定 INP 生成后端：`v0.2.18`
 
 ### English
@@ -34,7 +34,7 @@ CP2K_Forge is a Windows desktop application that creates CP2K `.inp` files throu
 
 Current versions:
 
-- Desktop application: `v0.4.9`
+- Desktop application: `v0.4.10`
 - Stable INP generation backend: `v0.2.18`
 
 ## 安装方式 | Installation
@@ -87,7 +87,7 @@ python CP2K_FORGE_EXE\run.py
 - 支持 OT/对角化、磁性、DFT+U、Molden、电荷分析和 cube 输出等设置。
 - 支持单文件和批量 INP 生成，并可同时创建本地 Slurm 脚本（暂仅适用于作者使用的超算平台；其他平台适配请联系作者）。
 - 载入并显示 CIF/MCIF、XYZ、PDB/ENT、GRO、GJF/COM、POSCAR/VASP 和 CP2K INP/RESTART。
-- 支持晶胞、周期映射、边界双显、扩胞、原子选择、显示键编辑、视角书签、撤销/重做和高清图片导出。
+- 支持晶胞、周期映射、边界双显、扩胞、原子选择、球棍/VDW 全局及局部显示、显示键编辑、视角书签、撤销/重做和高清图片导出。
 
 ### 源码结构
 
@@ -131,7 +131,7 @@ python -m PyInstaller CP2K_FORGE_EXE\CP2K_FORGE_EXE.spec `
 - Configure OT/diagonalization, magnetism, DFT+U, Molden, charge analysis, cube output, and related settings.
 - Generate single or batch inputs with optional local Slurm scripts (currently specific to the author's HPC platform; contact the author for adaptation).
 - Load and visualize CIF/MCIF, XYZ, PDB/ENT, GRO, GJF/COM, POSCAR/VASP, and CP2K INP/RESTART structures.
-- Display cells, wrap periodic atoms, duplicate boundary atoms, build supercells, select atoms, edit displayed bonds, save views, undo/redo visual operations, and export high-resolution images.
+- Display cells, wrap periodic atoms, duplicate boundary atoms, build supercells, select atoms, apply ball-stick/VDW representations globally or to selected atoms, edit displayed bonds, save views, undo/redo visual operations, and export high-resolution images.
 
 ### Source Layout
 

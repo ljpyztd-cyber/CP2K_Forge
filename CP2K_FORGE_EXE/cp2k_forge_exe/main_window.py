@@ -1563,6 +1563,16 @@ class CP2KForgeMainWindow(QMainWindow):
         self.atom_radius_mode_combo.addItem("", "default")
         self.atom_radius_mode_combo.addItem("", "equal")
         self.atom_radius_mode_combo.addItem("", "real")
+        self.atom_representation_label = QLabel()
+        self.atom_representation_combo = NoWheelComboBox()
+        self.atom_representation_combo.addItem("", "ball_stick")
+        self.atom_representation_combo.addItem("", "vdw")
+        self.selected_atom_representation_label = QLabel()
+        self.selected_atom_representation_combo = NoWheelComboBox()
+        self.selected_atom_representation_combo.addItem("", "ball_stick")
+        self.selected_atom_representation_combo.addItem("", "vdw")
+        self.selected_atom_representation_apply_btn = QPushButton()
+        self.selected_atom_representation_apply_btn.setFixedWidth(72)
         self.selected_atom_size_label = QLabel()
         self.atom_element_label = QLabel()
         self.atom_element_combo = NoWheelComboBox()
@@ -1598,6 +1608,17 @@ class CP2KForgeMainWindow(QMainWindow):
             self.atom_index_edit,
         )
         row = self._add_visual_subhead(atom_grid, row, self.atom_appearance_subhead)
+        row = self._add_visual_form_pair(
+            atom_grid,
+            row,
+            self.atom_representation_label,
+            self.atom_representation_combo,
+            self.selected_atom_representation_label,
+            self._visual_row_widget(
+                self.selected_atom_representation_combo,
+                self.selected_atom_representation_apply_btn,
+            ),
+        )
         row = self._add_visual_form_pair(
             atom_grid,
             row,
@@ -1768,6 +1789,8 @@ class CP2KForgeMainWindow(QMainWindow):
         self.cell_reset_btn.clicked.connect(self.reset_cell_style)
         self.atom_shadow_color_btn.clicked.connect(self.choose_atom_shadow_color)
         self.atom_radius_mode_combo.currentIndexChanged.connect(self._on_atom_radius_mode_changed)
+        self.atom_representation_combo.currentIndexChanged.connect(self._on_atom_representation_changed)
+        self.selected_atom_representation_apply_btn.clicked.connect(self.apply_selected_atom_representation)
         self.atom_element_combo.currentIndexChanged.connect(lambda _index: self._on_atom_element_changed(select_atoms=True))
         self.atom_element_color_btn.clicked.connect(self.choose_atom_element_color)
         self.atom_element_size_spin.valueChanged.connect(self._on_atom_element_size_changed)
@@ -1794,6 +1817,7 @@ class CP2KForgeMainWindow(QMainWindow):
         self._on_cell_width_changed(self.cell_width_spin.value())
         self.canvas.set_atom_outline_enabled(self.atom_outline_box.isChecked())
         self.canvas.set_atom_radius_mode(str(self.atom_radius_mode_combo.currentData() or "default"))
+        self.canvas.set_atom_representation_mode(str(self.atom_representation_combo.currentData() or "ball_stick"))
         self.canvas.set_bond_outline_enabled(self.bond_outline_box.isChecked())
         self.canvas.set_bond_color_mode(str(self.bond_mode_combo.currentData() or "split"))
         self.canvas.set_bonds_visible(self.bond_visible_box.isChecked())
@@ -2017,6 +2041,27 @@ class CP2KForgeMainWindow(QMainWindow):
     def _on_atom_radius_mode_changed(self) -> None:
         self.canvas.set_atom_radius_mode(str(self.atom_radius_mode_combo.currentData() or "default"))
 
+    def _on_atom_representation_changed(self) -> None:
+        self.canvas.set_atom_representation_mode(
+            str(self.atom_representation_combo.currentData() or "ball_stick")
+        )
+
+    def apply_selected_atom_representation(self) -> None:
+        indices = self._current_atom_indices()
+        if not indices:
+            self._set_status("status_no_selection")
+            return
+        mode = str(self.selected_atom_representation_combo.currentData() or "ball_stick")
+        changed = self.canvas.set_atom_index_representation(indices, mode)
+        representation = tr(
+            self.language,
+            "atom_representation_vdw" if mode == "vdw" else "atom_representation_ball_stick",
+        )
+        self._set_status(
+            "status_atom_representation_applied",
+            f"{representation} ({changed or len(indices)})",
+        )
+
     def choose_bond_color(self) -> None:
         color = self._choose_color(QColor(self.canvas.bond_custom_color), "bond_color")
         if color.isValid():
@@ -2172,6 +2217,10 @@ class CP2KForgeMainWindow(QMainWindow):
         self.cell_opacity_value_label.setText(f"{transparency}%")
 
         self._set_combo_value_blocked(self.atom_radius_mode_combo, self.canvas.atom_radius_mode)
+        self._set_combo_value_blocked(
+            self.atom_representation_combo,
+            self.canvas.atom_representation_mode,
+        )
         self._set_checked_blocked(self.atom_outline_box, self.canvas.atom_outline_enabled)
         self._set_spin_value_blocked(self.atom_outline_width_spin, self.canvas.atom_outline_width)
         self._on_atom_element_changed(select_atoms=False)
@@ -2282,6 +2331,8 @@ class CP2KForgeMainWindow(QMainWindow):
             },
             "atom": {
                 "radius_mode": "default",
+                "representation_mode": "ball_stick",
+                "index_representations": {},
                 "shadow_color": "#B8B8B8",
                 "element_colors": {},
                 "index_colors": {},
@@ -2333,6 +2384,13 @@ class CP2KForgeMainWindow(QMainWindow):
             },
             "atom": {
                 "radius_mode": str(self.atom_radius_mode_combo.currentData() or "default"),
+                "representation_mode": str(
+                    self.atom_representation_combo.currentData() or "ball_stick"
+                ),
+                "index_representations": {
+                    str(key): value
+                    for key, value in self.canvas.atom_index_representations.items()
+                },
                 "shadow_color": QColor(self.canvas.atom_shadow_color).name(),
                 "element_colors": self._color_map_to_json(self.canvas.atom_element_colors),
                 "index_colors": self._color_map_to_json(self.canvas.atom_index_colors),
@@ -2462,17 +2520,39 @@ class CP2KForgeMainWindow(QMainWindow):
                 if not atom_outline_color.isValid():
                     atom_outline_color = QColor("#1F2937")
                 radius_mode = str(atom.get("radius_mode", "default"))
+                representation_mode = str(atom.get("representation_mode", "ball_stick"))
                 self._set_combo_value_blocked(self.atom_radius_mode_combo, radius_mode)
+                self._set_combo_value_blocked(
+                    self.atom_representation_combo,
+                    representation_mode,
+                )
                 self._set_checked_blocked(self.atom_outline_box, bool(atom.get("outline_enabled", True)))
                 self._set_spin_value_blocked(self.atom_outline_width_spin, float(atom.get("outline_width", 0.1)))
                 self.canvas.set_atom_style_mode("preset")
                 self.canvas.set_atom_radius_mode(str(self.atom_radius_mode_combo.currentData() or "default"))
+                self.canvas.set_atom_representation_mode(
+                    str(self.atom_representation_combo.currentData() or "ball_stick")
+                )
+                representation_overrides = atom.get("index_representations", {})
+                if isinstance(representation_overrides, dict):
+                    by_mode: dict[str, set[int]] = {"ball_stick": set(), "vdw": set()}
+                    for raw_index, raw_mode in representation_overrides.items():
+                        try:
+                            atom_index = int(raw_index)
+                        except (TypeError, ValueError):
+                            continue
+                        mode = "vdw" if str(raw_mode).strip().lower() == "vdw" else "ball_stick"
+                        by_mode[mode].add(atom_index)
+                    for mode, indices in by_mode.items():
+                        if indices:
+                            self.canvas.set_atom_index_representation(indices, mode)
                 self.canvas.set_atom_shadow_color(atom_shadow_color)
                 self.canvas.atom_size_scale = 1.0
                 self.canvas.atom_element_colors = self._color_map_from_json(atom.get("element_colors", {}), int_keys=False)
                 self.canvas.atom_index_colors = self._color_map_from_json(atom.get("index_colors", {}), int_keys=True)
                 self.canvas.atom_element_sizes = self._float_map_from_json(atom.get("element_sizes", {}), int_keys=False)
                 self.canvas.atom_index_sizes = self._float_map_from_json(atom.get("index_sizes", {}), int_keys=True)
+                self.canvas.refit_scene_scale()
                 self.canvas.set_atom_outline_enabled(self.atom_outline_box.isChecked())
                 self.canvas.set_atom_outline_color(atom_outline_color)
                 self.canvas.set_atom_outline_width(self.atom_outline_width_spin.value())
@@ -2832,6 +2912,17 @@ class CP2KForgeMainWindow(QMainWindow):
             tr(lang, "atom_radius_equal"),
             tr(lang, "atom_radius_real"),
         ])
+        self.atom_representation_label.setText(tr(lang, "atom_representation"))
+        self._set_combo_labels(self.atom_representation_combo, [
+            tr(lang, "atom_representation_ball_stick"),
+            tr(lang, "atom_representation_vdw"),
+        ])
+        self.selected_atom_representation_label.setText(tr(lang, "selected_atom_representation"))
+        self._set_combo_labels(self.selected_atom_representation_combo, [
+            tr(lang, "atom_representation_ball_stick"),
+            tr(lang, "atom_representation_vdw"),
+        ])
+        self.selected_atom_representation_apply_btn.setText(tr(lang, "apply"))
         self.selected_atom_size_label.setText(tr(lang, "selected_atom_size"))
         self.atom_element_label.setText(tr(lang, "atom_element"))
         self.atom_element_size_label.setText(tr(lang, "atom_element_size"))

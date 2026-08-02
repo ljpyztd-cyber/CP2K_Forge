@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+import shlex
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -179,8 +181,78 @@ def _multiwfn_atom_index_text(value: Any) -> str:
     return text
 
 
+def _cif_requires_occupancy_confirmation(input_path: Path) -> bool:
+    """Return whether Multiwfn will pause after loading a partial-occupancy CIF."""
+    if input_path.suffix.lower() not in {".cif", ".mcif"}:
+        return False
+
+    try:
+        lines = input_path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return False
+
+    number_pattern = re.compile(r"^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[Ee][+-]?\d+)?")
+    index = 0
+    while index < len(lines):
+        if lines[index].strip().lower() != "loop_":
+            index += 1
+            continue
+
+        index += 1
+        headers: list[str] = []
+        while index < len(lines):
+            stripped = lines[index].strip()
+            if not stripped or stripped.startswith("#"):
+                index += 1
+                continue
+            if not stripped.startswith("_"):
+                break
+            headers.append(stripped.split(maxsplit=1)[0].lower())
+            index += 1
+
+        try:
+            occupancy_index = headers.index("_atom_site_occupancy")
+        except ValueError:
+            continue
+
+        pending_tokens: list[str] = []
+        while index < len(lines):
+            stripped = lines[index].strip()
+            lowered = stripped.lower()
+            if lowered == "loop_" or lowered.startswith(("data_", "save_", "stop_")):
+                break
+            if stripped.startswith("_"):
+                break
+            index += 1
+            if not stripped or stripped.startswith("#"):
+                continue
+            try:
+                pending_tokens.extend(shlex.split(stripped, comments=True, posix=True))
+            except ValueError:
+                continue
+
+            while len(pending_tokens) >= len(headers):
+                row = pending_tokens[: len(headers)]
+                del pending_tokens[: len(headers)]
+                occupancy_text = row[occupancy_index]
+                if occupancy_text in {".", "?"}:
+                    continue
+                match = number_pattern.match(occupancy_text)
+                if match and float(match.group(0)) < 1.0 - 1.0e-9:
+                    return True
+
+    return False
+
+
+def _multiwfn_input_commands(input_path: Path) -> list[str]:
+    commands = [str(input_path)]
+    if _cif_requires_occupancy_confirmation(input_path):
+        commands.append("")
+    return commands
+
+
 def build_multiwfn_commands(input_path: Path, output_path: Path, values: dict[str, Any]) -> list[str]:
-    commands: list[str] = [str(input_path), "cp2k", str(output_path)]
+    commands = [*_multiwfn_input_commands(input_path), "cp2k", str(output_path)]
 
     periodic = str(values.get("periodic", "XYZ")).strip().upper()
     if periodic:
@@ -267,7 +339,7 @@ def build_multiwfn_commands(input_path: Path, output_path: Path, values: dict[st
 
 
 def build_multiwfn_100_2_gjf_commands(input_path: Path, output_path: Path) -> list[str]:
-    return [str(input_path), "100", "2", "10", str(output_path), "q"]
+    return [*_multiwfn_input_commands(input_path), "100", "2", "10", str(output_path), "q"]
 
 
 def run_multiwfn(

@@ -67,6 +67,7 @@ DEFAULT_VALUES: dict[str, Any] = {
     "mixing_alpha": "0.2",
     "nbroyden": "16",
     "soft_element_strategy": False,
+    "lanthanide_strategy": False,
     "plus_u_method": "MULLIKEN",
     "enable_dft_u": False,
     "enable_magnetism": False,
@@ -614,13 +615,6 @@ def generate_job(payload: dict[str, Any]) -> dict[str, Any]:
     values = normalized.values
     messages = list(normalized.messages)
     source_path_text = str(file_info.get("path") or values.get("source_path") or "").strip().strip('"')
-    if values.get("scf_method") == "OT" and str(values.get("ot_minimizer", "DIIS")).upper() != "DIIS":
-        messages.append(
-            RuleMessage(
-                "warning",
-                "OT MINIMIZER selection was not patched directly. Current Multiwfn 3.8 CP2K generator probing did not expose a DIIS/CG menu, so Multiwfn's generated value is kept.",
-            )
-        )
     task = str(values.get("task", "ENERGY"))
     fixed_atoms_mode = str(values.get("fixed_atoms_mode", "MANUAL")).upper()
 

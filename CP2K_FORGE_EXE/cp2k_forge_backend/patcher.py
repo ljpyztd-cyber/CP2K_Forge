@@ -4,7 +4,14 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
-from .rules import SOFT_ELEMENTS, parse_dft_u_rows, parse_key_value_rows
+from .rules import (
+    LANTHANIDE_ELEMENTS,
+    LNPP1_BASIS_BY_ELEMENT,
+    LNPP1_POTENTIAL_BY_ELEMENT,
+    SOFT_ELEMENTS,
+    parse_dft_u_rows,
+    parse_key_value_rows,
+)
 
 
 CP2K_FORGE_WATERMARK = "#Revised by CP2K_Forge (Contact: jiapeili-c@my.cityu.edu.hk for more details)"
@@ -208,6 +215,29 @@ def _set_dft_keyword(lines: list[str], keyword: str, value: str, notes: list[str
     _set_keyword_in_block(lines, start, end, keyword, value, "    ", notes, note)
 
 
+def _ensure_dft_file_reference(
+    lines: list[str], keyword: str, value: str, notes: list[str], note: str
+) -> None:
+    dft = _find_first_section(lines, "DFT")
+    if not dft:
+        return
+    start, end = dft
+    rx = re.compile(
+        rf"^\s*{re.escape(keyword)}\s+{re.escape(value)}\s*$",
+        flags=re.IGNORECASE,
+    )
+    if any(rx.match(line) for line in lines[start + 1 : end]):
+        return
+
+    insert_at = start + 1
+    keyword_rx = re.compile(rf"^\s*{re.escape(keyword)}\b", flags=re.IGNORECASE)
+    for idx in range(start + 1, end):
+        if keyword_rx.match(lines[idx]):
+            insert_at = idx + 1
+    lines.insert(insert_at, f"    {keyword} {value}")
+    notes.append(note)
+
+
 def _set_dft_lone_keyword(lines: list[str], keyword: str, notes: list[str], note: str) -> None:
     dft = _find_first_section(lines, "DFT")
     if not dft:
@@ -373,6 +403,53 @@ def _apply_soft_element_strategy(lines: list[str], elements: list[str], notes: l
                 notes.append(f"Changed {kind_name} POTENTIAL to ALL.")
 
 
+def _apply_lanthanide_strategy(lines: list[str], elements: list[str], notes: list[str]) -> None:
+    lanthanides_present = LANTHANIDE_ELEMENTS.intersection(elements)
+    if not lanthanides_present:
+        return
+
+    _ensure_dft_file_reference(
+        lines,
+        "BASIS_SET_FILE_NAME",
+        "BASIS_MOLOPT_LnPP1",
+        notes,
+        "Added BASIS_SET_FILE_NAME BASIS_MOLOPT_LnPP1 for lanthanide basis sets.",
+    )
+    _set_dft_keyword(
+        lines,
+        "POTENTIAL_FILE_NAME",
+        "POTENTIAL+LnPP1",
+        notes,
+        "Set POTENTIAL_FILE_NAME POTENTIAL+LnPP1 for the validated lanthanide potential set.",
+    )
+
+    for start, end, kind_name in reversed(_find_kind_sections(lines)):
+        element = _kind_element(lines, start, end, kind_name)
+        if element not in lanthanides_present:
+            continue
+        inserted = _set_keyword_in_block(
+            lines,
+            start,
+            end,
+            "BASIS_SET",
+            LNPP1_BASIS_BY_ELEMENT[element],
+            "      ",
+            notes,
+            f"Set {kind_name} BASIS_SET to {LNPP1_BASIS_BY_ELEMENT[element]}.",
+        )
+        end += inserted
+        _set_keyword_in_block(
+            lines,
+            start,
+            end,
+            "POTENTIAL",
+            LNPP1_POTENTIAL_BY_ELEMENT[element],
+            "      ",
+            notes,
+            f"Set {kind_name} POTENTIAL to {LNPP1_POTENTIAL_BY_ELEMENT[element]}.",
+        )
+
+
 def _ensure_cp2k_forge_watermark(lines: list[str], notes: list[str]) -> None:
     if any(line.strip() == CP2K_FORGE_WATERMARK for line in lines):
         return
@@ -531,6 +608,17 @@ def apply_cp2k_forge_patches(raw_text: str, values: dict[str, Any], elements: li
                 lines,
                 start,
                 end,
+                "MINIMIZER",
+                str(values.get("ot_minimizer", "DIIS")).strip().upper() or "DIIS",
+                "        ",
+                notes,
+                "Set OT MINIMIZER.",
+            )
+            end += inserted
+            inserted = _set_keyword_in_block(
+                lines,
+                start,
+                end,
                 "PRECONDITIONER",
                 "FULL_ALL",
                 "        ",
@@ -658,6 +746,9 @@ def apply_cp2k_forge_patches(raw_text: str, values: dict[str, Any], elements: li
 
     if values.get("soft_element_strategy", False):
         _apply_soft_element_strategy(lines, elements, notes)
+
+    if values.get("lanthanide_strategy", False):
+        _apply_lanthanide_strategy(lines, elements, notes)
 
     if values.get("kpoints_mode", "GAMMA") != "GAMMA":
         _ensure_kpoints(lines, str(values.get("kpoints", "1,1,1")), notes)

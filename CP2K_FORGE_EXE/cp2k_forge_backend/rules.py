@@ -7,6 +7,31 @@ from typing import Any
 
 
 SOFT_ELEMENTS = {"Na", "Mg", "F"}
+LANTHANIDE_ELEMENTS = {
+    "La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd",
+    "Tb", "Dy", "Ho", "Er", "Tm", "Yb", "Lu",
+}
+LNPP1_BASIS_BY_ELEMENT = {
+    element: "DZV-MOLOPT-GTH" if element == "La" else "DZV-MOLOPT-SR-GTH"
+    for element in LANTHANIDE_ELEMENTS
+}
+LNPP1_POTENTIAL_BY_ELEMENT = {
+    "La": "GTH-PBE-q11",
+    "Ce": "GTH-PBE-q12",
+    "Pr": "GTH-PBE-q13",
+    "Nd": "GTH-PBE-q14",
+    "Pm": "GTH-PBE-q15",
+    "Sm": "GTH-PBE-q16",
+    "Eu": "GTH-PBE-q17",
+    "Gd": "GTH-PBE-q18",
+    "Tb": "GTH-PBE-q29",
+    "Dy": "GTH-PBE-q30",
+    "Ho": "GTH-PBE-q31",
+    "Er": "GTH-PBE-q32",
+    "Tm": "GTH-PBE-q33",
+    "Yb": "GTH-PBE-q34",
+    "Lu": "GTH-PBE-q35",
+}
 MAGNETIC_MOMENT_PRESETS = {
     "Mn": "2",
     "Fe": "2",
@@ -279,8 +304,51 @@ def normalize_spec(
     element_counts = dict(element_counts or {element: 1 for element in elements})
     values["enable_dft_u"] = _bool_value(values.get("enable_dft_u", values.get("auto_dft_u_presets", False)))
     values["enable_magnetism"] = _bool_value(values.get("enable_magnetism", values.get("auto_magnetization_presets", False)))
+    values["lanthanide_strategy"] = _bool_value(values.get("lanthanide_strategy", False))
     values.pop("auto_dft_u_presets", None)
     values.pop("auto_magnetization_presets", None)
+
+    lanthanides_present = sorted(LANTHANIDE_ELEMENTS.intersection(elements), key=lambda item: ATOMIC_NUMBERS[item])
+    if values["lanthanide_strategy"] and lanthanides_present:
+        values.update(
+            {
+                "scf_method": "OT",
+                "ot_minimizer": "CG",
+                "ot_inner_max_scf": "50",
+                "scf_accuracy": "Low",
+                "diag_eps_scf": "1.0E-05",
+                "ot_inner_eps_scf": "1.0E-05",
+                "ot_outer_eps_scf": "1.0E-05",
+                "cutoff": "600",
+                "rel_cutoff": "60",
+            }
+        )
+        messages.append(
+            RuleMessage(
+                "info",
+                "LnPP1 preset enabled for "
+                + ", ".join(lanthanides_present)
+                + ". OT/CG, inner MAX_SCF 50, Low SCF accuracy, CUTOFF 600 Ry and REL_CUTOFF 60 Ry will be used. "
+                "Ensure BASIS_MOLOPT_LnPP1 and POTENTIAL+LnPP1 are available to CP2K.",
+            )
+        )
+    elif values["lanthanide_strategy"]:
+        messages.append(
+            RuleMessage(
+                "warning",
+                "The LnPP1 preset was enabled, but no lanthanide element (La-Lu) was detected; no LnPP1 KIND patch will be applied.",
+            )
+        )
+    elif lanthanides_present:
+        messages.append(
+            RuleMessage(
+                "info",
+                "Lanthanide element(s) detected: "
+                + ", ".join(lanthanides_present)
+                + ". The validated LnPP1 preset is available but currently disabled.",
+            )
+        )
+
     scf_method = str(values.get("scf_method", "OT")).strip().upper()
     values["scf_method"] = "DIAG" if scf_method in {"DIAG", "DIAGONALIZATION"} else "OT"
 

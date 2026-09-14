@@ -62,6 +62,7 @@ from .backend_bridge import (
     ensure_backend_path,
     generate_job,
     is_optimization_task,
+    lanthanide_elements,
     magnetic_moment_presets,
     prepare_auto_fixed_preview,
     scf_accuracy_eps,
@@ -405,6 +406,7 @@ class CP2KForgeMainWindow(QMainWindow):
         self.default_values = backend_default_values()
         self.magnetic_moment_presets = magnetic_moment_presets()
         self.dft_u_presets = dft_u_presets()
+        self.lanthanide_elements = lanthanide_elements()
         self.visual_styles = load_visual_styles()
         self.value_widgets: dict[str, Any] = {}
         self.current_file: Path | None = None
@@ -415,6 +417,7 @@ class CP2KForgeMainWindow(QMainWindow):
         self.worker: BackendWorker | None = None
         self._busy_mode = ""
         self._diag_max_touched = False
+        self._lanthanide_auto_dft_u = False
         self._disabled_tasks = {"MD", "BAND"}
         self._last_task_value = "ENERGY"
         self._applying_visual_style = False
@@ -1163,6 +1166,8 @@ class CP2KForgeMainWindow(QMainWindow):
         self.smearing_box = self._check("smearing")
         self.smearing_box.toggled.connect(self._update_method_controls)
         self.soft_element_box = self._check("soft_element_strategy")
+        self.lanthanide_strategy_box = self._check("lanthanide_strategy")
+        self.lanthanide_strategy_box.toggled.connect(self._on_lanthanide_strategy_toggled)
         self.temperature_label = QLabel()
         self.temperature_edit = self._line("electronic_temperature")
         self.diag_max_label = QLabel()
@@ -1196,8 +1201,9 @@ class CP2KForgeMainWindow(QMainWindow):
         scf_grid.addWidget(self.rel_cutoff_edit, 3, 1)
         scf_grid.addWidget(self.temperature_label, 3, 2)
         scf_grid.addWidget(self.temperature_edit, 3, 3)
-        scf_grid.addWidget(self.smearing_box, 4, 0, 1, 2)
-        scf_grid.addWidget(self.soft_element_box, 4, 2, 1, 2)
+        scf_grid.addWidget(self.smearing_box, 4, 0)
+        scf_grid.addWidget(self.soft_element_box, 4, 1)
+        scf_grid.addWidget(self.lanthanide_strategy_box, 4, 2, 1, 2)
         scf_grid.addWidget(self.diag_max_label, 5, 0)
         scf_grid.addWidget(self.diag_max_edit, 5, 1)
         scf_grid.addWidget(self.diag_eps_label, 5, 2)
@@ -2787,6 +2793,8 @@ class CP2KForgeMainWindow(QMainWindow):
         self.rel_cutoff_label.setText(tr(lang, "rel_cutoff"))
         self.smearing_box.setText(tr(lang, "smearing"))
         self.soft_element_box.setText(tr(lang, "soft_element_strategy"))
+        self.lanthanide_strategy_box.setText(tr(lang, "lanthanide_strategy"))
+        self.lanthanide_strategy_box.setToolTip(tr(lang, "lanthanide_strategy_help"))
         self.temperature_label.setText(tr(lang, "smearing_temperature"))
         self.diag_max_label.setText(tr(lang, "diag_max_scf"))
         self.diag_eps_label.setText(tr(lang, "diag_eps_scf"))
@@ -3082,6 +3090,7 @@ class CP2KForgeMainWindow(QMainWindow):
 
     def _apply_defaults(self, reset_project: bool = True) -> None:
         self._diag_max_touched = False
+        self._lanthanide_auto_dft_u = False
         self._apply_values(self.default_values)
         self._apply_task_defaults()
         self._apply_scf_accuracy_preset()
@@ -3736,6 +3745,55 @@ class CP2KForgeMainWindow(QMainWindow):
             rows = self._preset_rows_for_elements(self.dft_u_presets)
             if rows:
                 self.dft_u_rows_edit.setPlainText(rows)
+        self._apply_lanthanide_presets()
+
+    def _clear_auto_lanthanide_dft_u(self) -> None:
+        if not self._lanthanide_auto_dft_u:
+            return
+        if self.dft_u_rows_edit.toPlainText().strip() == "Ce f 4.08":
+            checkbox_blocker = QSignalBlocker(self.enable_dft_u_box)
+            rows_blocker = QSignalBlocker(self.dft_u_rows_edit)
+            self.enable_dft_u_box.setChecked(False)
+            self.dft_u_rows_edit.clear()
+            del rows_blocker
+            del checkbox_blocker
+        self._lanthanide_auto_dft_u = False
+
+    def _apply_lanthanide_presets(self) -> None:
+        if not self.lanthanide_strategy_box.isChecked():
+            self._clear_auto_lanthanide_dft_u()
+            return
+
+        self._set_combo_value(self.scf_method_combo, "OT")
+        self._set_combo_value(self.scf_accuracy_combo, "Low")
+        self._set_combo_value(self.ot_minimizer_combo, "CG")
+        self.cutoff_edit.setText("600")
+        self.rel_cutoff_edit.setText("60")
+        self.ot_inner_max_edit.setText("50")
+        self._apply_scf_accuracy_preset()
+        self._update_method_controls()
+
+        elements = set(self._current_elements())
+        if not elements.intersection(self.lanthanide_elements) or "Ce" not in elements:
+            self._clear_auto_lanthanide_dft_u()
+            return
+        if self.enable_dft_u_box.isChecked() or self.dft_u_rows_edit.toPlainText().strip():
+            return
+
+        checkbox_blocker = QSignalBlocker(self.enable_dft_u_box)
+        self.enable_dft_u_box.setChecked(True)
+        del checkbox_blocker
+        self.dft_u_rows_edit.setPlainText("Ce f 4.08")
+        self._lanthanide_auto_dft_u = True
+        self.mag_group.setChecked(True)
+        self._update_feature_controls()
+
+    def _on_lanthanide_strategy_toggled(self, checked: bool) -> None:
+        if checked:
+            self._apply_lanthanide_presets()
+        else:
+            self._clear_auto_lanthanide_dft_u()
+            self._update_feature_controls()
 
     def _on_magnetism_toggled(self, checked: bool) -> None:
         if checked:
@@ -3748,6 +3806,7 @@ class CP2KForgeMainWindow(QMainWindow):
         if checked:
             self._apply_feature_presets()
         else:
+            self._lanthanide_auto_dft_u = False
             self.dft_u_rows_edit.clear()
         self._update_feature_controls()
 

@@ -6,9 +6,11 @@
 
 ## 中文
 
-本目录包含 CP2K_Forge `v0.4.10` 桌面程序源码：PyQt 主界面、结构可视化、设置持久化、桌面专用 INP 生成后端和 PyInstaller 构建配置。可视化模块支持整套结构或仅所选原子在球棍与 VDW 表示之间切换。
+本目录包含 CP2K_Forge `v0.4.11` 桌面程序源码：PyQt 主界面、结构可视化、设置持久化、桌面专用 INP 生成后端和 PyInstaller 构建配置。可视化模块支持整套结构或仅所选原子在球棍与 VDW 表示之间切换。
 
 INP 生成逻辑位于 `cp2k_forge_backend`。它从稳定后端 `v0.2.18` 提取，仅保留桌面程序所需的 Multiwfn 命令、规则归一、CP2K 修补、固定原子、slab、批量生成和本地 Slurm 逻辑，不包含网页 HTTP 服务或远程提交功能。`cp2k_forge_exe/backend_bridge.py` 是桌面 UI 的调用入口。
+
+电子结构菜单提供 La-Lu 镧系元素 LnPP1 预设，按元素写入 `BASIS_MOLOPT_LnPP1` 基组和 GTH-PBE-q 赝势映射，并应用已验证的 OT/CG、Low SCF 精度、600 Ry CUTOFF 与 60 Ry REL_CUTOFF。Ce 体系会建议 `f 4.08 eV` DFT+U。运行生成的任务前，请确保 CP2K 能找到 `BASIS_MOLOPT_LnPP1` 和 `POTENTIAL+LnPP1`。
 
 ### 运行
 
@@ -29,9 +31,11 @@ python -m PyInstaller CP2K_FORGE_EXE\CP2K_FORGE_EXE.spec `
 
 ## English
 
-This directory contains the CP2K_Forge `v0.4.10` desktop source: the PyQt main window, structure visualization, persistent settings, desktop-only INP generation backend, and PyInstaller build configuration. The viewer can switch the complete structure or only selected atoms between ball-stick and VDW representations.
+This directory contains the CP2K_Forge `v0.4.11` desktop source: the PyQt main window, structure visualization, persistent settings, desktop-only INP generation backend, and PyInstaller build configuration. The viewer can switch the complete structure or only selected atoms between ball-stick and VDW representations.
 
 INP generation lives in `cp2k_forge_backend`. It is extracted from the validated `v0.2.18` backend and retains only the Multiwfn commands, rule normalization, CP2K patching, fixed-atom handling, slab logic, batch generation, and local Slurm logic needed by the desktop app. It contains no web HTTP service or remote-submission feature. `cp2k_forge_exe/backend_bridge.py` is the desktop UI entry point.
+
+The electronic-structure panel provides a La-Lu LnPP1 preset. It writes the element-specific `BASIS_MOLOPT_LnPP1` basis and GTH-PBE-q potential mapping, then applies the validated OT/CG, Low SCF accuracy, 600 Ry CUTOFF, and 60 Ry REL_CUTOFF settings. Ce systems receive a suggested `f 4.08 eV` DFT+U entry. Before running the generated task, ensure that CP2K can find `BASIS_MOLOPT_LnPP1` and `POTENTIAL+LnPP1`.
 
 ### Run
 

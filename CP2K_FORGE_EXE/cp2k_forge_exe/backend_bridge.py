@@ -150,6 +150,10 @@ def dft_u_presets() -> dict[str, str]:
     return dict(_rules_module().DFT_U_PRESETS)
 
 
+def lanthanide_elements() -> set[str]:
+    return set(_rules_module().LANTHANIDE_ELEMENTS)
+
+
 def generate_job(payload: dict[str, Any]) -> dict[str, Any]:
     return _backend_module().generate_job(payload)
 

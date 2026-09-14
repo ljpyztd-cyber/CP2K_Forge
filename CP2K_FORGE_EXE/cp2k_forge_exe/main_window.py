@@ -417,7 +417,6 @@ class CP2KForgeMainWindow(QMainWindow):
         self.worker: BackendWorker | None = None
         self._busy_mode = ""
         self._diag_max_touched = False
-        self._lanthanide_auto_dft_u = False
         self._disabled_tasks = {"MD", "BAND"}
         self._last_task_value = "ENERGY"
         self._applying_visual_style = False
@@ -3090,7 +3089,6 @@ class CP2KForgeMainWindow(QMainWindow):
 
     def _apply_defaults(self, reset_project: bool = True) -> None:
         self._diag_max_touched = False
-        self._lanthanide_auto_dft_u = False
         self._apply_values(self.default_values)
         self._apply_task_defaults()
         self._apply_scf_accuracy_preset()
@@ -3698,6 +3696,7 @@ class CP2KForgeMainWindow(QMainWindow):
 
     def reset_form(self) -> None:
         self._apply_defaults()
+        self._apply_feature_presets()
         self.clear_batch_files()
         self.clear_reference_structure()
         self._refresh_preview_box(tr(self.language, "manual_indices_preview"))
@@ -3735,6 +3734,8 @@ class CP2KForgeMainWindow(QMainWindow):
         return bool(elements & (preset_elements | TRANSITION_OR_MAGNETIC_ELEMENTS))
 
     def _apply_feature_presets(self) -> None:
+        if set(self._current_elements()) & self.lanthanide_elements:
+            self.lanthanide_strategy_box.setChecked(True)
         if self._has_magnetic_or_u_presets():
             self.mag_group.setChecked(True)
         if self.enable_mag_box.isChecked() and not self.mag_rows_edit.toPlainText().strip():
@@ -3745,53 +3746,10 @@ class CP2KForgeMainWindow(QMainWindow):
             rows = self._preset_rows_for_elements(self.dft_u_presets)
             if rows:
                 self.dft_u_rows_edit.setPlainText(rows)
-        self._apply_lanthanide_presets()
-
-    def _clear_auto_lanthanide_dft_u(self) -> None:
-        if not self._lanthanide_auto_dft_u:
-            return
-        if self.dft_u_rows_edit.toPlainText().strip() == "Ce f 4.08":
-            checkbox_blocker = QSignalBlocker(self.enable_dft_u_box)
-            rows_blocker = QSignalBlocker(self.dft_u_rows_edit)
-            self.enable_dft_u_box.setChecked(False)
-            self.dft_u_rows_edit.clear()
-            del rows_blocker
-            del checkbox_blocker
-        self._lanthanide_auto_dft_u = False
-
-    def _apply_lanthanide_presets(self) -> None:
-        if not self.lanthanide_strategy_box.isChecked():
-            self._clear_auto_lanthanide_dft_u()
-            return
-
-        self._set_combo_value(self.scf_method_combo, "OT")
-        self._set_combo_value(self.ot_minimizer_combo, "CG")
-        self.cutoff_edit.setText("600")
-        self.rel_cutoff_edit.setText("60")
-        self.ot_inner_max_edit.setText("50")
-        self._update_method_controls()
-
-        elements = set(self._current_elements())
-        if not elements.intersection(self.lanthanide_elements) or "Ce" not in elements:
-            self._clear_auto_lanthanide_dft_u()
-            return
-        if self.enable_dft_u_box.isChecked() or self.dft_u_rows_edit.toPlainText().strip():
-            return
-
-        checkbox_blocker = QSignalBlocker(self.enable_dft_u_box)
-        self.enable_dft_u_box.setChecked(True)
-        del checkbox_blocker
-        self.dft_u_rows_edit.setPlainText("Ce f 4.08")
-        self._lanthanide_auto_dft_u = True
-        self.mag_group.setChecked(True)
-        self._update_feature_controls()
 
     def _on_lanthanide_strategy_toggled(self, checked: bool) -> None:
         if checked:
-            self._apply_lanthanide_presets()
-        else:
-            self._clear_auto_lanthanide_dft_u()
-            self._update_feature_controls()
+            self._set_combo_value(self.ot_minimizer_combo, "CG")
 
     def _on_magnetism_toggled(self, checked: bool) -> None:
         if checked:
@@ -3804,7 +3762,6 @@ class CP2KForgeMainWindow(QMainWindow):
         if checked:
             self._apply_feature_presets()
         else:
-            self._lanthanide_auto_dft_u = False
             self.dft_u_rows_edit.clear()
         self._update_feature_controls()
 

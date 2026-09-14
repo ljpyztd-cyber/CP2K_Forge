@@ -310,21 +310,12 @@ def normalize_spec(
 
     lanthanides_present = sorted(LANTHANIDE_ELEMENTS.intersection(elements), key=lambda item: ATOMIC_NUMBERS[item])
     if values["lanthanide_strategy"] and lanthanides_present:
-        values.update(
-            {
-                "scf_method": "OT",
-                "ot_minimizer": "CG",
-                "ot_inner_max_scf": "50",
-                "cutoff": "600",
-                "rel_cutoff": "60",
-            }
-        )
         messages.append(
             RuleMessage(
                 "info",
-                "LnPP1 preset enabled for "
+                "LnPP1 mapping enabled for "
                 + ", ".join(lanthanides_present)
-                + ". OT/CG, inner MAX_SCF 50, CUTOFF 600 Ry and REL_CUTOFF 60 Ry will be used; the selected SCF accuracy is preserved. "
+                + ". Only the LnPP1 basis/potential references and lanthanide KIND mappings will be patched; SCF, grid and DFT+U settings are preserved. "
                 "Ensure BASIS_MOLOPT_LnPP1 and POTENTIAL+LnPP1 are available to CP2K.",
             )
         )
@@ -332,7 +323,7 @@ def normalize_spec(
         messages.append(
             RuleMessage(
                 "warning",
-                "The LnPP1 preset was enabled, but no lanthanide element (La-Lu) was detected; no LnPP1 KIND patch will be applied.",
+                "The LnPP1 mapping was enabled, but no lanthanide element (La-Lu) was detected; no LnPP1 KIND patch will be applied.",
             )
         )
     elif lanthanides_present:
@@ -341,7 +332,7 @@ def normalize_spec(
                 "info",
                 "Lanthanide element(s) detected: "
                 + ", ".join(lanthanides_present)
-                + ". The validated LnPP1 preset is available but currently disabled.",
+                + ". The validated LnPP1 mapping is available but currently disabled.",
             )
         )
 

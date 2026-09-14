@@ -3765,12 +3765,10 @@ class CP2KForgeMainWindow(QMainWindow):
             return
 
         self._set_combo_value(self.scf_method_combo, "OT")
-        self._set_combo_value(self.scf_accuracy_combo, "Low")
         self._set_combo_value(self.ot_minimizer_combo, "CG")
         self.cutoff_edit.setText("600")
         self.rel_cutoff_edit.setText("60")
         self.ot_inner_max_edit.setText("50")
-        self._apply_scf_accuracy_preset()
         self._update_method_controls()
 
         elements = set(self._current_elements())

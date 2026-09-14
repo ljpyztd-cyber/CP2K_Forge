@@ -18,6 +18,8 @@ build/
 dist/
 CP2K_FORGE_EXE/build/
 CP2K_FORGE_EXE/dist/
+CP2K_FORGE_EXE/build*/
+CP2K_FORGE_EXE/dist*/
 *.exe
 *.dll
 *.pyd

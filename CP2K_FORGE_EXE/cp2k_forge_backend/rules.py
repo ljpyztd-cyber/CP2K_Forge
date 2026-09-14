@@ -315,10 +315,6 @@ def normalize_spec(
                 "scf_method": "OT",
                 "ot_minimizer": "CG",
                 "ot_inner_max_scf": "50",
-                "scf_accuracy": "Low",
-                "diag_eps_scf": "1.0E-05",
-                "ot_inner_eps_scf": "1.0E-05",
-                "ot_outer_eps_scf": "1.0E-05",
                 "cutoff": "600",
                 "rel_cutoff": "60",
             }
@@ -328,7 +324,7 @@ def normalize_spec(
                 "info",
                 "LnPP1 preset enabled for "
                 + ", ".join(lanthanides_present)
-                + ". OT/CG, inner MAX_SCF 50, Low SCF accuracy, CUTOFF 600 Ry and REL_CUTOFF 60 Ry will be used. "
+                + ". OT/CG, inner MAX_SCF 50, CUTOFF 600 Ry and REL_CUTOFF 60 Ry will be used; the selected SCF accuracy is preserved. "
                 "Ensure BASIS_MOLOPT_LnPP1 and POTENTIAL+LnPP1 are available to CP2K.",
             )
         )

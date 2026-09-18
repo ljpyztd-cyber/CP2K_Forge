@@ -190,6 +190,56 @@ def _multiwfn_subprocess_env(multiwfn_exe: Path) -> dict[str, str]:
     return env
 
 
+def _file_signature(path: Path) -> tuple[int, int] | None:
+    try:
+        stat = path.stat()
+    except OSError:
+        return None
+    return stat.st_mtime_ns, stat.st_size
+
+
+def _output_was_refreshed(path: Path, before: tuple[int, int] | None) -> bool:
+    after = _file_signature(path)
+    return after is not None and (before is None or after != before)
+
+
+def _is_valid_cp2k_input(path: Path) -> bool:
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace").upper()
+    except OSError:
+        return False
+    return all(marker in text for marker in ("&GLOBAL", "&FORCE_EVAL", "&COORD"))
+
+
+def _is_valid_gjf(path: Path) -> bool:
+    try:
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return False
+
+    for index, line in enumerate(lines):
+        parts = line.split()
+        if len(parts) != 2:
+            continue
+        try:
+            int(parts[0])
+            int(parts[1])
+        except ValueError:
+            continue
+        for coordinate_line in lines[index + 1 :]:
+            coordinate = coordinate_line.split()
+            if len(coordinate) < 4 or coordinate[0].lower() == "tv":
+                continue
+            try:
+                float(coordinate[1].replace("D", "E").replace("d", "e"))
+                float(coordinate[2].replace("D", "E").replace("d", "e"))
+                float(coordinate[3].replace("D", "E").replace("d", "e"))
+            except ValueError:
+                continue
+            return True
+    return False
+
+
 def _cif_requires_occupancy_confirmation(input_path: Path) -> bool:
     """Return whether Multiwfn will pause after loading a partial-occupancy CIF."""
     if input_path.suffix.lower() not in {".cif", ".mcif"}:
@@ -370,6 +420,7 @@ def run_multiwfn(
             error=f"Multiwfn executable not found: {multiwfn_exe}",
         )
 
+    output_before = _file_signature(output_path)
     try:
         completed = subprocess.run(
             [str(multiwfn_exe)],
@@ -393,13 +444,19 @@ def run_multiwfn(
         )
 
     log = (completed.stdout or "") + "\n" + (completed.stderr or "")
-    ok = completed.returncode == 0 and output_path.is_file()
-    if completed.returncode != 0:
+    refreshed = _output_was_refreshed(output_path, output_before)
+    valid = _is_valid_cp2k_input(output_path) if refreshed else False
+    ok = refreshed and valid
+    if ok:
+        error = None
+    elif completed.returncode != 0:
         error = f"Multiwfn exited with code {completed.returncode} before creating a valid CP2K input file."
     elif not output_path.is_file():
         error = "Multiwfn did not create the expected CP2K input file."
+    elif not refreshed:
+        error = "Multiwfn did not refresh the expected CP2K input file."
     else:
-        error = None
+        error = "Multiwfn created an incomplete CP2K input file."
     return MultiwfnResult(
         ok=ok,
         log=log,
@@ -429,6 +486,7 @@ def run_multiwfn_100_2_gjf(
         )
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_before = _file_signature(output_path)
     try:
         completed = subprocess.run(
             [str(multiwfn_exe)],
@@ -452,13 +510,19 @@ def run_multiwfn_100_2_gjf(
         )
 
     log = (completed.stdout or "") + "\n" + (completed.stderr or "")
-    ok = completed.returncode == 0 and output_path.is_file()
-    if completed.returncode != 0:
+    refreshed = _output_was_refreshed(output_path, output_before)
+    valid = _is_valid_gjf(output_path) if refreshed else False
+    ok = refreshed and valid
+    if ok:
+        error = None
+    elif completed.returncode != 0:
         error = f"Multiwfn 100-2 exited with code {completed.returncode} before creating a valid GJF file."
     elif not output_path.is_file():
         error = "Multiwfn 100-2 did not create the expected GJF file."
+    elif not refreshed:
+        error = "Multiwfn 100-2 did not refresh the expected GJF file."
     else:
-        error = None
+        error = "Multiwfn 100-2 created an incomplete GJF file."
     return MultiwfnResult(
         ok=ok,
         log=log,

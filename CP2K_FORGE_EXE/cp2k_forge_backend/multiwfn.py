@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 import shlex
 import subprocess
@@ -179,6 +180,14 @@ def _multiwfn_atom_index_text(value: Any) -> str:
     text = ",".join(part for part in text.replace("\n", " ").split() if part)
     text = ",".join(part for part in text.split(",") if part.strip())
     return text
+
+
+def _multiwfn_subprocess_env(multiwfn_exe: Path) -> dict[str, str]:
+    env = os.environ.copy()
+    # Multiwfn uses this variable to locate settings.ini. Keep a globally
+    # configured installation from overriding the executable selected in Forge.
+    env["Multiwfnpath"] = str(multiwfn_exe.parent)
+    return env
 
 
 def _cif_requires_occupancy_confirmation(input_path: Path) -> bool:
@@ -366,6 +375,7 @@ def run_multiwfn(
             [str(multiwfn_exe)],
             input=command_script,
             cwd=str(output_path.parent),
+            env=_multiwfn_subprocess_env(multiwfn_exe),
             capture_output=True,
             text=True,
             encoding="utf-8",
@@ -383,8 +393,13 @@ def run_multiwfn(
         )
 
     log = (completed.stdout or "") + "\n" + (completed.stderr or "")
-    ok = output_path.is_file()
-    error = None if ok else "Multiwfn did not create the expected CP2K input file."
+    ok = completed.returncode == 0 and output_path.is_file()
+    if completed.returncode != 0:
+        error = f"Multiwfn exited with code {completed.returncode} before creating a valid CP2K input file."
+    elif not output_path.is_file():
+        error = "Multiwfn did not create the expected CP2K input file."
+    else:
+        error = None
     return MultiwfnResult(
         ok=ok,
         log=log,
@@ -419,6 +434,7 @@ def run_multiwfn_100_2_gjf(
             [str(multiwfn_exe)],
             input=command_script,
             cwd=str(output_path.parent),
+            env=_multiwfn_subprocess_env(multiwfn_exe),
             capture_output=True,
             text=True,
             encoding="utf-8",
@@ -436,8 +452,13 @@ def run_multiwfn_100_2_gjf(
         )
 
     log = (completed.stdout or "") + "\n" + (completed.stderr or "")
-    ok = output_path.is_file()
-    error = None if ok else "Multiwfn 100-2 did not create the expected GJF file."
+    ok = completed.returncode == 0 and output_path.is_file()
+    if completed.returncode != 0:
+        error = f"Multiwfn 100-2 exited with code {completed.returncode} before creating a valid GJF file."
+    elif not output_path.is_file():
+        error = "Multiwfn 100-2 did not create the expected GJF file."
+    else:
+        error = None
     return MultiwfnResult(
         ok=ok,
         log=log,

@@ -25,7 +25,7 @@ CP2K_Forge 是一个 Windows 桌面工具，用于通过经过验证的 Multiwfn
 
 当前版本：
 
-- 桌面程序：`v0.4.11`
+- 桌面程序：`v0.4.12`
 - 稳定 INP 生成后端：`v0.2.18`
 
 ### English
@@ -34,7 +34,7 @@ CP2K_Forge is a Windows desktop application that creates CP2K `.inp` files throu
 
 Current versions:
 
-- Desktop application: `v0.4.11`
+- Desktop application: `v0.4.12`
 - Stable INP generation backend: `v0.2.18`
 
 ## 安装方式 | Installation
